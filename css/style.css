@@ -1194,6 +1194,69 @@ h4 {
     margin-top: 32px;
 }
 
+.step {
+    transition: all 0.3s ease;
+}
+
+.step.completed .step-number {
+    background: #1b8c7c;
+    color: white;
+    position: relative;
+}
+
+.step.completed .step-number::after {
+    content: '\f00c';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 18px;
+}
+
+.step.completed .step-title {
+    color: #1b8c7c;
+}
+
+.step-group {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.step-buttons {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #eef3f5;
+}
+
+@media (max-width: 768px) {
+    .steps {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 8px;
+    }
+    
+    .step {
+        min-width: 100px;
+        padding: 12px;
+    }
+    
+    .step-title {
+        font-size: 12px;
+    }
+}
+
 @media (max-width: 1024px) {
     .doctors-grid { grid-template-columns: repeat(2, 1fr); }
     .blog-grid { grid-template-columns: repeat(2, 1fr); }

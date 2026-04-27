@@ -1,17 +1,119 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const calendarDiv = document.getElementById('calendar');
-    if (calendarDiv) {
-        initCalendar();
+    
+    let currentStep = 1;
+    const totalSteps = 3;
+    
+    const steps = document.querySelectorAll('.step');
+    const stepGroups = document.querySelectorAll('.step-group');
+    
+    function updateStepDisplay() {
+        steps.forEach((step, index) => {
+            const stepNum = index + 1;
+            step.classList.remove('active', 'completed');
+            
+            if (stepNum < currentStep) {
+                step.classList.add('completed');
+            } else if (stepNum === currentStep) {
+                step.classList.add('active');
+            }
+        });
+        
+        stepGroups.forEach(group => {
+            const groupStep = parseInt(group.dataset.step);
+            if (groupStep === currentStep) {
+                group.style.display = 'block';
+                group.classList.add('active');
+            } else {
+                group.style.display = 'none';
+                group.classList.remove('active');
+            }
+        });
+        
+        addNavigationButtons();
+    }
+    
+    function addNavigationButtons() {
+        const currentGroup = document.querySelector(`.step-group[data-step="${currentStep}"]`);
+        if (!currentGroup) return;
+        
+        const oldButtons = currentGroup.querySelector('.step-buttons');
+        if (oldButtons) oldButtons.remove();
+        
+        const buttonsDiv = document.createElement('div');
+        buttonsDiv.className = 'step-buttons';
+        
+        if (currentStep > 1) {
+            const prevBtn = document.createElement('button');
+            prevBtn.type = 'button';
+            prevBtn.className = 'btn-secondary';
+            prevBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Назад';
+            prevBtn.onclick = () => {
+                currentStep--;
+                updateStepDisplay();
+            };
+            buttonsDiv.appendChild(prevBtn);
+        }
+        
+        if (currentStep < totalSteps) {
+            const nextBtn = document.createElement('button');
+            nextBtn.type = 'button';
+            nextBtn.className = 'btn-primary';
+            nextBtn.innerHTML = 'Далее <i class="fas fa-arrow-right"></i>';
+            nextBtn.onclick = () => {
+                if (validateCurrentStep()) {
+                    currentStep++;
+                    updateStepDisplay();
+                }
+            };
+            buttonsDiv.appendChild(nextBtn);
+        } else {
+            const submitBtn = document.createElement('button');
+            submitBtn.type = 'submit';
+            submitBtn.className = 'submit-btn';
+            submitBtn.innerHTML = 'Подтвердить запись <i class="fas fa-check"></i>';
+            buttonsDiv.appendChild(submitBtn);
+        }
+        
+        currentGroup.appendChild(buttonsDiv);
+    }
+    
+    function validateCurrentStep() {
+        const currentGroup = document.querySelector(`.step-group[data-step="${currentStep}"]`);
+        if (!currentGroup) return true;
+        
+        const requiredFields = currentGroup.querySelectorAll('[required]');
+        const errors = [];
+        
+        for (let field of requiredFields) {
+            if (!field.value.trim()) {
+                field.style.borderColor = '#e06888';
+                errors.push(field.previousElementSibling?.innerText || 'Заполните поле');
+            } else {
+                field.style.borderColor = '#e2ecef';
+            }
+        }
+        
+        if (currentStep === 2) {
+            const selectedDate = document.getElementById('selectedDate')?.value;
+            const selectedTime = document.getElementById('selectedTime')?.value;
+            if (!selectedDate) errors.push('Выберите дату');
+            if (!selectedTime) errors.push('Выберите время');
+        }
+        
+        if (errors.length > 0) {
+            alert('⚠️ Пожалуйста, заполните все обязательные поля:\n- ' + errors.join('\n- '));
+            return false;
+        }
+        return true;
     }
     
     function initCalendar() {
-        const today = new Date();
         const calendarDiv = document.getElementById('calendar');
-        const selectedDateInput = document.getElementById('selectedDate');
-        const timeSlotsDiv = document.getElementById('timeSlots');
+        if (!calendarDiv) return;
         
-        let selectedDate = null;
-        let selectedTimeElem = null;
+        calendarDiv.innerHTML = '';
+        const today = new Date();
+        const selectedDateInput = document.getElementById('selectedDate');
         
         const weekdays = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
         weekdays.forEach(day => {
@@ -43,125 +145,110 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 this.classList.add('selected');
-                selectedDate = this.dataset.date;
-                selectedDateInput.value = selectedDate;
-                
-                generateTimeSlots(selectedDate);
+                selectedDateInput.value = this.dataset.date;
+                generateTimeSlots(this.dataset.date);
             });
             
             calendarDiv.appendChild(dayElem);
         }
-        
-        function generateTimeSlots(date) {
-            if (!timeSlotsDiv) return;
-            timeSlotsDiv.innerHTML = '';
-            
-            const slots = ['09:00', '10:00', '11:00', '12:00', '13:00', 
-                           '14:00', '15:00', '16:00', '17:00', '18:00'];
-            
-            slots.forEach(time => {
-                const slotElem = document.createElement('div');
-                slotElem.className = 'time-slot';
-                slotElem.textContent = time;
-                slotElem.addEventListener('click', function() {
-                    document.querySelectorAll('.time-slot').forEach(s => {
-                        s.classList.remove('selected');
-                    });
-                    this.classList.add('selected');
-                    document.getElementById('selectedTime').value = time;
-                });
-                timeSlotsDiv.appendChild(slotElem);
-            });
-        }
     }
     
-    const appointmentForm = document.getElementById('appointmentForm');
-    if (appointmentForm) {
-        appointmentForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            if (validateAppointmentForm()) {
-                alert('✅ Запись успешно создана!\n\nМы отправили подтверждение на ваш телефон.\nЖдём вас в клинике!');
-                appointmentForm.reset();
-                document.querySelectorAll('.calendar-day.selected').forEach(d => d.classList.remove('selected'));
-                document.querySelectorAll('.time-slot.selected').forEach(t => t.classList.remove('selected'));
-                document.getElementById('selectedDate').value = '';
-                document.getElementById('selectedTime').value = '';
-            }
+    function generateTimeSlots(date) {
+        const timeSlotsDiv = document.getElementById('timeSlots');
+        if (!timeSlotsDiv) return;
+        
+        timeSlotsDiv.innerHTML = '';
+        const slots = ['09:00', '10:00', '11:00', '12:00', '13:00', 
+                       '14:00', '15:00', '16:00', '17:00', '18:00'];
+        
+        slots.forEach(time => {
+            const slotElem = document.createElement('div');
+            slotElem.className = 'time-slot';
+            slotElem.textContent = time;
+            slotElem.addEventListener('click', function() {
+                document.querySelectorAll('.time-slot').forEach(s => {
+                    s.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                document.getElementById('selectedTime').value = time;
+            });
+            timeSlotsDiv.appendChild(slotElem);
         });
     }
     
-    function validateAppointmentForm() {
-        let isValid = true;
-        const errors = [];
-        
-        const service = document.getElementById('service')?.value;
-        if (!service) {
-            errors.push('Выберите услугу');
-            isValid = false;
-        }
-        
-        const date = document.getElementById('selectedDate')?.value;
-        if (!date) {
-            errors.push('Выберите дату');
-            isValid = false;
-        }
-        
-        const time = document.getElementById('selectedTime')?.value;
-        if (!time) {
-            errors.push('Выберите время');
-            isValid = false;
-        }
-        
-        const ownerName = document.getElementById('ownerName')?.value.trim();
-        if (!ownerName || ownerName.length < 2) {
-            errors.push('Введите корректное имя');
-            isValid = false;
-        }
-        
-        const phone = document.getElementById('phone')?.value.trim();
-        const phoneRegex = /^\+7\s?\(?[0-9]{3}\)?\s?[0-9]{3}-?[0-9]{2}-?[0-9]{2}$/;
-        if (!phoneRegex.test(phone) && phone.length < 10) {
-            errors.push('Введите номер телефона в формате +7 (XXX) XXX-XX-XX');
-            isValid = false;
-        }
-        
-        const petName = document.getElementById('petName')?.value.trim();
-        if (!petName) {
-            errors.push('Введите имя питомца');
-            isValid = false;
-        }
-        
-        if (!isValid) {
-            alert('Пожалуйста, исправьте ошибки:\n- ' + errors.join('\n- '));
-        }
-        
-        return isValid;
-    }
-    
-    const feedbackForm = document.getElementById('feedbackForm');
-    if (feedbackForm) {
-        feedbackForm.addEventListener('submit', function(e) {
+    const form = document.getElementById('appointmentForm');
+    if (form) {
+        form.addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const name = document.getElementById('fbName')?.value.trim();
-            const contact = document.getElementById('fbContact')?.value.trim();
-            const subject = document.getElementById('fbSubject')?.value.trim();
-            const message = document.getElementById('fbMessage')?.value.trim();
+            const service = document.getElementById('service')?.value;
+            const date = document.getElementById('selectedDate')?.value;
+            const time = document.getElementById('selectedTime')?.value;
+            const ownerName = document.getElementById('ownerName')?.value.trim();
+            const phone = document.getElementById('phone')?.value.trim();
+            const petName = document.getElementById('petName')?.value.trim();
             
-            if (!name || !contact || !subject || !message) {
-                alert('❌ Пожалуйста, заполните все поля');
+            const errors = [];
+            if (!service) errors.push('Выберите услугу');
+            if (!date) errors.push('Выберите дату');
+            if (!time) errors.push('Выберите время');
+            if (!ownerName) errors.push('Введите ваше имя');
+            if (!phone) errors.push('Введите телефон');
+            if (!petName) errors.push('Введите имя питомца');
+            
+            if (errors.length > 0) {
+                alert('⚠️ Пожалуйста, исправьте ошибки:\n- ' + errors.join('\n- '));
                 return;
             }
             
-            alert('✅ Спасибо! Ваше сообщение отправлено. Мы свяжемся с вами в ближайшее время.');
-            feedbackForm.reset();
+            const formData = new FormData();
+            formData.append('service', service);
+            formData.append('date', date);
+            formData.append('time', time);
+            formData.append('ownerName', ownerName);
+            formData.append('phone', phone);
+            formData.append('petName', petName);
+            formData.append('breed', document.getElementById('breed')?.value || '');
+            formData.append('comment', document.getElementById('comment')?.value || '');
+            
+            const submitBtn = form.querySelector('.submit-btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Отправка...';
+            submitBtn.disabled = true;
+            
+            try {
+                const response = await fetch('php/send-appointment.php', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Запись успешно создана!\n\nМы свяжемся с вами для подтверждения.\nЖдём вас в клинике!');
+                    form.reset();
+                    document.getElementById('selectedDate').value = '';
+                    document.getElementById('selectedTime').value = '';
+                    document.querySelectorAll('.calendar-day.selected').forEach(d => d.classList.remove('selected'));
+                    document.querySelectorAll('.time-slot.selected').forEach(t => t.classList.remove('selected'));
+                    currentStep = 1;
+                    updateStepDisplay();
+                } else {
+                    alert('❌ Ошибка: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('❌ Ошибка соединения. Проверьте, запущен ли Apache в XAMPP.\n\nПодробнее: ' + error.message);
+            } finally {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            }
         });
     }
     
-    const phoneInputs = document.querySelectorAll('input[type="tel"]');
-    phoneInputs.forEach(input => {
-        input.addEventListener('input', function(e) {
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
             let value = this.value.replace(/\D/g, '');
             if (value.length > 11) value = value.slice(0, 11);
             
@@ -176,14 +263,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.value = '';
             }
         });
-    });
+    }
     
     const currentPath = window.location.pathname.split('/').pop() || 'index.html';
-    const navLinks = document.querySelectorAll('.nav-menu a');
-    navLinks.forEach(link => {
+    document.querySelectorAll('.nav-menu a').forEach(link => {
         const href = link.getAttribute('href');
         if (href === currentPath) {
             link.classList.add('active');
         }
+    });
+    
+    initCalendar();
+    updateStepDisplay();
+    
+    steps.forEach(step => {
+        step.addEventListener('click', () => {
+            const targetStep = parseInt(step.dataset.step);
+            if (targetStep < currentStep) {
+                currentStep = targetStep;
+                updateStepDisplay();
+            } else if (targetStep > currentStep) {
+                if (validateCurrentStep()) {
+                    currentStep = targetStep;
+                    updateStepDisplay();
+                }
+            }
+        });
     });
 });

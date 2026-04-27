@@ -3,13 +3,118 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zoóptima — запись</title>
-    <meta name="description" content="Запишите питомца на приём в ветеринарную клинику Zoóptima онлайн. Выберите услугу, удобную дату и время. Быстро и просто.">
+    <title>Zoóptima — Онлайн-запись на приём</title>
+    <meta name="description" content="Запишите питомца на приём в ветеринарную клинику Zoóptima онлайн">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .step {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .step.completed .step-number {
+            background: #1b8c7c;
+            color: white;
+            position: relative;
+        }
+        .step.completed .step-number::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 18px;
+        }
+        .step.completed .step-number span {
+            opacity: 0;
+        }
+        .step.completed .step-title {
+            color: #1b8c7c;
+        }
+        .step-group {
+            animation: fadeIn 0.3s ease;
+            display: none;
+        }
+        .step-group.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .step-buttons {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #eef3f5;
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin: 20px 0;
+        }
+        .calendar-weekday {
+            text-align: center;
+            font-weight: 600;
+            padding: 8px;
+            color: #1b8c7c;
+        }
+        .calendar-day {
+            text-align: center;
+            padding: 12px 8px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .calendar-day.available {
+            background: #eef7f5;
+            color: #1b8c7c;
+        }
+        .calendar-day.available:hover {
+            background: #1b8c7c;
+            color: white;
+        }
+        .calendar-day.selected {
+            background: #1b8c7c;
+            color: white;
+        }
+        .calendar-day.unavailable {
+            background: #f5f5f5;
+            color: #b0c4ce;
+            cursor: not-allowed;
+        }
+        .time-slots {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 20px 0;
+        }
+        .time-slot {
+            padding: 10px 20px;
+            border: 2px solid #e2ecef;
+            border-radius: 40px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .time-slot:hover {
+            border-color: #1b8c7c;
+            background: #eef7f5;
+        }
+        .time-slot.selected {
+            background: #1b8c7c;
+            border-color: #1b8c7c;
+            color: white;
+        }
+    </style>
 </head>
 <body>
     <header class="header">
@@ -26,7 +131,7 @@
                 <a href="blog.html">Блог</a>
             </nav>
             <div class="header-actions">
-                <a href="tel:+74951234567" class="phone-link"><i class="fas fa-phone-alt"></i> +7 (901) 053-84-89</a>
+                <a href="tel:+74951234567" class="phone-link"><i class="fas fa-phone-alt"></i> +7 (495) 123-45-67</a>
                 <a href="appointment.html" class="btn-primary"><i class="fas fa-calendar-check"></i> Запись онлайн</a>
             </div>
         </div>
@@ -45,74 +150,77 @@
         <section class="appointment-section">
             <div class="container">
                 <div class="steps">
-                    <div class="step active">
-                        <div class="step-number">1</div>
+                    <div class="step active" data-step="1">
+                        <div class="step-number"><span>1</span></div>
                         <div class="step-title">Выбор услуги</div>
                     </div>
-                    <div class="step">
-                        <div class="step-number">2</div>
+                    <div class="step" data-step="2">
+                        <div class="step-number"><span>2</span></div>
                         <div class="step-title">Выбор даты и времени</div>
                     </div>
-                    <div class="step">
-                        <div class="step-number">3</div>
+                    <div class="step" data-step="3">
+                        <div class="step-number"><span>3</span></div>
                         <div class="step-title">Контактные данные</div>
                     </div>
                 </div>
 
                 <form class="appointment-form" id="appointmentForm">
-                    <div class="form-group">
-                        <label>Выберите услугу *</label>
-                        <select id="service" required>
-                            <option value="">-- Выберите услугу --</option>
-                            <option value="Первичный приём терапевта">Первичный приём терапевта — 1 500 ₽</option>
-                            <option value="УЗИ (одна зона)">УЗИ (одна зона) — 2 200 ₽</option>
-                            <option value="Кастрация кота">Кастрация кота — 3 200 ₽</option>
-                            <option value="Комплексная вакцинация">Комплексная вакцинация — от 2 100 ₽</option>
-                            <option value="Снятие зубного камня">Снятие зубного камня — 2 800 ₽</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Выберите дату *</label>
-                        <div class="calendar-grid" id="calendar"></div>
-                        <input type="hidden" id="selectedDate">
-                    </div>
-
-                    <div class="form-group">
-                        <label>Выберите время *</label>
-                        <div class="time-slots" id="timeSlots"></div>
-                        <input type="hidden" id="selectedTime">
-                    </div>
-
-                    <div class="form-row">
+                    <div class="step-group" data-step="1">
                         <div class="form-group">
-                            <label>Ваше имя *</label>
-                            <input type="text" id="ownerName" placeholder="Иван Петров" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Телефон *</label>
-                            <input type="tel" id="phone" placeholder="+7 (___) ___-__-__" required>
+                            <label>Выберите услугу *</label>
+                            <select id="service" name="service" required>
+                                <option value="">-- Выберите услугу --</option>
+                                <option value="Первичный приём терапевта">Первичный приём терапевта — 1 500 ₽</option>
+                                <option value="УЗИ (одна зона)">УЗИ (одна зона) — 2 200 ₽</option>
+                                <option value="Кастрация кота">Кастрация кота — 3 200 ₽</option>
+                                <option value="Комплексная вакцинация">Комплексная вакцинация — от 2 100 ₽</option>
+                                <option value="Снятие зубного камня">Снятие зубного камня — 2 800 ₽</option>
+                                <option value="Приём хирурга">Приём хирурга — 1 500 ₽</option>
+                                <option value="Чипирование">Чипирование — 1 300 ₽</option>
+                            </select>
                         </div>
                     </div>
 
-                    <div class="form-row">
+                    <div class="step-group" data-step="2" style="display: none;">
                         <div class="form-group">
-                            <label>Имя питомца *</label>
-                            <input type="text" id="petName" placeholder="Барсик" required>
+                            <label>Выберите дату *</label>
+                            <div class="calendar-grid" id="calendar"></div>
+                            <input type="hidden" id="selectedDate" name="date">
+                            <input type="hidden" id="selectedDateDisplay">
                         </div>
                         <div class="form-group">
-                            <label>Порода (опционально)</label>
-                            <input type="text" id="breed" placeholder="например, мейн-кун">
+                            <label>Выберите время *</label>
+                            <div class="time-slots" id="timeSlots"></div>
+                            <input type="hidden" id="selectedTime" name="time">
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>Комментарий</label>
-                        <textarea rows="3" id="comment" placeholder="Дополнительная информация, например, симптомы"></textarea>
+                    <div class="step-group" data-step="3" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Ваше имя *</label>
+                                <input type="text" id="ownerName" name="ownerName" placeholder="Иван Петров" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Телефон *</label>
+                                <input type="tel" id="phone" name="phone" placeholder="+7 (___) ___-__-__" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Имя питомца *</label>
+                                <input type="text" id="petName" name="petName" placeholder="Барсик" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Порода (опционально)</label>
+                                <input type="text" id="breed" name="breed" placeholder="например, мейн-кун">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Комментарий</label>
+                            <textarea rows="3" id="comment" name="comment" placeholder="Дополнительная информация"></textarea>
+                        </div>
                     </div>
-
-                    <button type="submit" class="submit-btn">Подтвердить запись</button>
-                    <p class="form-note"><i class="fas fa-lock"></i> После записи с вами свяжется администратор для подтверждения</p>
                 </form>
             </div>
         </section>
@@ -144,13 +252,13 @@
             <div class="footer-contacts">
                 <h4>Контакты</h4>
                 <p><i class="fas fa-map-pin"></i> Москва, ул. Зелёная, д. 15</p>
-                <p><i class="fas fa-phone"></i> +7 (901) 053-84-89</p>
-                <p><i class="fas fa-envelope"></i> mihailneneustroev@gmail.com</p>
+                <p><i class="fas fa-phone"></i> +7 (495) 123-45-67</p>
+                <p><i class="fas fa-envelope"></i> hello@zooptima.ru</p>
                 <p><i class="fas fa-clock"></i> Круглосуточно</p>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2026 Zoóptima Ветеринарная клиника.</p>
+            <p>&copy; 2025 Zoóptima Ветеринарная клиника.</p>
         </div>
     </footer>
 
